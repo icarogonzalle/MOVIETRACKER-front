@@ -36,7 +36,10 @@ export async function findOrFetchMovie(title: string): Promise<MovieDTO> {
 }
 
 export async function searchMovies(query: string): Promise<MovieDTO[]> {
-  return getAllMovies(query)
+  const { data } = await api.get<MovieDTO[]>('/movies', {
+    params: { q: query },
+  })
+  return data
 }
 
 export async function getFavoriteMovies(userId: number): Promise<MovieDTO[]> {

@@ -70,6 +70,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import MovieCarousel from '@/components/movies/MovieCarousel.vue'
+import { getAllMovies, type MovieDTO } from '@/services/movieService'
 
 // Tipo básico do filme (ajuste conforme o que a sua API retorna)
 interface Movie {
@@ -88,34 +89,32 @@ const recommendedMovies = ref<Movie[]>([])
 const favoriteMovies = ref<Movie[]>([])
 const highlightMovie = ref<Movie | null>(null)
 
+// converte o MovieDTO do backend para o Movie usado na Home
+function mapDtoToMovie(dto: MovieDTO): Movie {
+  return {
+    id: dto.id,
+    title: dto.title,
+    year: dto.year ? String(dto.year) : '',
+    // por enquanto deixamos esses campos vazios
+    runtime: '',
+    imdbRating: '',
+    plot: '',
+    poster: dto.poster ?? undefined,
+    favorite: false, // depois dá pra puxar dos favoritos do usuário
+  }
+}
 const loadData = async () => {
-  // MOCK provisório – depois trocamos pelos dados reais da API
-  popularMovies.value = [
-    {
-      id: 1,
-      title: 'Inception',
-      year: '2010',
-      runtime: '148 min',
-      imdbRating: '8.8',
-      plot: 'Um ladrão que rouba segredos através de sonhos...',
-      poster: 'https://m.media-amazon.com/images/M/MV5BM2MyNjYxNmYt.jpg',
-      favorite: false,
-    },
-    {
-      id: 2,
-      title: 'The Matrix',
-      year: '1999',
-      runtime: '136 min',
-      imdbRating: '8.7',
-      plot: 'Um hacker descobre a verdadeira natureza da realidade...',
-      poster: '',
-      favorite: true,
-    },
-  ]
+  // busca todos os filmes do backend
+  const dtos = await getAllMovies()
+  const all = dtos.map(mapDtoToMovie)
 
-  recommendedMovies.value = popularMovies.value
-  favoriteMovies.value = popularMovies.value.filter((m) => m.favorite)
-  highlightMovie.value = favoriteMovies.value[0] ?? null
+  // regra simples só pra preencher as seções:
+  popularMovies.value = all.slice(0, 4) // primeiros 4
+  recommendedMovies.value = all.slice(2, 6) // 4 seguintes como recomendação
+  favoriteMovies.value = all.slice(0, 3) // por enquanto, 3 primeiros como "favoritos"
+
+  // destaque da direita ("último favorito" / hero card)
+  highlightMovie.value = favoriteMovies.value[0] ?? popularMovies.value[0] ?? null
 }
 
 onMounted(loadData)
