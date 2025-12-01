@@ -8,6 +8,7 @@ export interface MovieDTO {
   genre: string | null
   poster: string | null
   omdbId: string | null
+  imdbRating: string | null
   directorName: string | null
   actors: string[]
 }

@@ -36,13 +36,15 @@
           <p class="text-lg font-semibold">
             {{ highlightMovie.title }}
           </p>
+
           <p class="text-xs text-slate-300">
-            {{ highlightMovie.year }} • {{ highlightMovie.runtime }} • IMDb
-            {{ highlightMovie.imdbRating }}
+            {{ highlightMovie.year }}
+            <span v-if="highlightMovie.runtime"> • {{ highlightMovie.runtime }}</span>
+            • IMDb {{ highlightMovie.imdbRating || 'N/A' }}
           </p>
 
           <p class="text-xs text-slate-400 line-clamp-3">
-            {{ highlightMovie.plot }}
+            {{ highlightMovie.plot || 'Continue assistindo e nós mostraremos mais detalhes aqui.' }}
           </p>
 
           <button
@@ -72,7 +74,7 @@ import { ref, onMounted } from 'vue'
 import MovieCarousel from '@/components/movies/MovieCarousel.vue'
 import { getAllMovies, type MovieDTO } from '@/services/movieService'
 
-// Tipo básico do filme (ajuste conforme o que a sua API retorna)
+// Tipo básico do filme usado na Home
 interface Movie {
   id: number
   title: string
@@ -95,25 +97,22 @@ function mapDtoToMovie(dto: MovieDTO): Movie {
     id: dto.id,
     title: dto.title,
     year: dto.year ? String(dto.year) : '',
-    // por enquanto deixamos esses campos vazios
-    runtime: '',
-    imdbRating: '',
-    plot: '',
+    runtime: '', // ainda não veio do backend, deixamos vazio
+    imdbRating: dto.imdbRating ?? '',
+    plot: '', // idem
     poster: dto.poster ?? undefined,
-    favorite: false, // depois dá pra puxar dos favoritos do usuário
+    favorite: false,
   }
 }
+
 const loadData = async () => {
-  // busca todos os filmes do backend
   const dtos = await getAllMovies()
   const all = dtos.map(mapDtoToMovie)
 
-  // regra simples só pra preencher as seções:
-  popularMovies.value = all.slice(0, 4) // primeiros 4
-  recommendedMovies.value = all.slice(2, 6) // 4 seguintes como recomendação
-  favoriteMovies.value = all.slice(0, 3) // por enquanto, 3 primeiros como "favoritos"
+  popularMovies.value = all.slice(0, 4)
+  recommendedMovies.value = all.slice(2, 6)
+  favoriteMovies.value = all.slice(0, 3)
 
-  // destaque da direita ("último favorito" / hero card)
   highlightMovie.value = favoriteMovies.value[0] ?? popularMovies.value[0] ?? null
 }
 

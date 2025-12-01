@@ -3,10 +3,10 @@ import { ref } from 'vue'
 
 // Mock de usuário – depois você troca por dados vindos da API
 const user = ref({
-  name: 'Ícaro Gonzales',
-  username: 'icarogonzalle',
+  name: 'Ícaro Gonzalle',
+  username: 'icaroazevedo_',
   email: 'icaro@example.com',
-  bio: 'Backend dev, movie nerd & future cybersec specialist.',
+  bio: 'Backend dev, movie nerd & future fullstack specialist.',
   location: 'Brasil',
   joinedAt: 'Entrou em julho de 2024',
   avatarUrl: '', // coloca uma URL se quiser testar com imagem

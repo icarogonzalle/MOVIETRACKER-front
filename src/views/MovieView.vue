@@ -65,7 +65,9 @@ function mapDtoToMovie(dto: MovieDTO): Movie {
     id: dto.id,
     title: dto.title,
     year: dto.year ? String(dto.year) : undefined,
-    // runtime / imdbRating / plot viriam de outro endpoint se você quiser depois
+    runtime: '', // ainda não veio do backend
+    imdbRating: dto.imdbRating ?? '',
+    plot: '', // ainda não veio do backend
     poster: dto.poster ?? undefined,
     favorite: false,
     genres,
@@ -98,7 +100,6 @@ async function onSearch() {
 
 // --- filtros de gênero / seções ---
 
-// gera lista de gêneros dinamicamente a partir dos filmes
 const genres = computed<string[]>(() => {
   const set = new Set<string>()
   allMovies.value.forEach((m) => m.genres.forEach((g) => set.add(g)))
@@ -112,13 +113,11 @@ const filteredMovies = computed(() => {
   return allMovies.value.filter((m) => m.genres.includes(selectedGenre.value))
 })
 
-// seções que viram carrosséis
 const sections = computed(() => {
   const unique = new Set(filteredMovies.value.map((m) => m.section))
   return Array.from(unique)
 })
 
-// mapa seção -> filmes
 const moviesBySection = computed<Record<string, Movie[]>>(() => {
   const map: Record<string, Movie[]> = {}
 
