@@ -12,25 +12,18 @@
           em segundos.
         </h1>
         <p class="text-sm md:text-base text-slate-300 max-w-xl">
-          Pesquise por título, veja detalhes pela API, e mantenha sua lista de favoritos
-          sincronizada com o MovieTracker.
+          Acompanhe seus favoritos, veja recomendações e continue de onde parou com o MovieTracker.
         </p>
 
-        <!-- Busca rápida -->
-        <form @submit.prevent="onSearch" class="flex flex-col sm:flex-row gap-3 mt-4">
-          <input
-            v-model="searchTerm"
-            type="text"
-            placeholder="Buscar por título (ex: Inception)"
-            class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-400"
-          />
-          <button
-            type="submit"
-            class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold"
+        <!-- Call-to-action simples para o catálogo -->
+        <div class="mt-4">
+          <router-link
+            to="/movies"
+            class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold transition"
           >
-            Buscar
-          </button>
-        </form>
+            Ir para o catálogo de filmes
+          </router-link>
+        </div>
       </div>
 
       <!-- Card destaque -->
@@ -39,12 +32,10 @@
       >
         <p class="text-xs uppercase tracking-[0.2em] text-slate-400 mb-2">Último favorito</p>
 
-        <p v-if="highlightMovie" class="text-lg font-semibold">
-          {{ highlightMovie.title }}
-        </p>
-
         <div v-if="highlightMovie" class="space-y-3">
-          <p class="text-lg font-semibold">{{ highlightMovie.title }}</p>
+          <p class="text-lg font-semibold">
+            {{ highlightMovie.title }}
+          </p>
           <p class="text-xs text-slate-300">
             {{ highlightMovie.year }} • {{ highlightMovie.runtime }} • IMDb
             {{ highlightMovie.imdbRating }}
@@ -79,12 +70,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import MovieCarousel from '@/components/movies/MovieCarousel.vue'
-import {
-  //getPopularMovies,
-  //getRecommendedMovies,
-  //getFavoriteMovies,
-  searchMovie,
-} from '../services/movieService'
 
 // Tipo básico do filme (ajuste conforme o que a sua API retorna)
 interface Movie {
@@ -98,15 +83,13 @@ interface Movie {
   favorite?: boolean
 }
 
-const searchTerm = ref('')
-
-// Agora tudo tipado 👇
 const popularMovies = ref<Movie[]>([])
 const recommendedMovies = ref<Movie[]>([])
 const favoriteMovies = ref<Movie[]>([])
 const highlightMovie = ref<Movie | null>(null)
 
 const loadData = async () => {
+  // MOCK provisório – depois trocamos pelos dados reais da API
   popularMovies.value = [
     {
       id: 1,
@@ -133,13 +116,6 @@ const loadData = async () => {
   recommendedMovies.value = popularMovies.value
   favoriteMovies.value = popularMovies.value.filter((m) => m.favorite)
   highlightMovie.value = favoriteMovies.value[0] ?? null
-}
-
-const onSearch = async () => {
-  if (!searchTerm.value) return
-  const result = await searchMovie(searchTerm.value)
-  console.log('Resultado da busca:', result)
-  // aqui depois você decide o que fazer com o resultado
 }
 
 onMounted(loadData)

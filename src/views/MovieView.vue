@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import MovieCarousel from '@/components/movies/MovieCarousel.vue'
+import { getAllMovies, searchMovies, type MovieDTO } from '@/services/movieService'
 
 // Mesmo tipo base do MovieCarousel, com alguns campos extras
 interface Movie {
@@ -11,107 +12,98 @@ interface Movie {
   imdbRating?: string
   plot?: string
   poster?: string
-  posterUrl?: string
   favorite?: boolean
-  genres: string[] // 👈 para filtro
-  section: string // 👈 para separar em carrosséis
+  genres: string[]
+  section: string
 }
 
-// Mock de filmes – depois você pode trocar para dados da API
-const allMovies = ref<Movie[]>([
-  {
-    id: 1,
-    title: 'Inception',
-    year: '2010',
-    runtime: '148 min',
-    imdbRating: '8.8',
-    plot: 'Um ladrão invade sonhos para roubar segredos...',
-    poster: 'https://via.placeholder.com/300x450?text=Inception',
-    genres: ['Sci-Fi', 'Ação', 'Thriller'],
-    section: 'Populares agora',
-  },
-  {
-    id: 2,
-    title: 'The Dark Knight',
-    year: '2008',
-    runtime: '152 min',
-    imdbRating: '9.0',
-    plot: 'Batman enfrenta o Coringa em uma Gotham caótica.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BMTMxNTMwODM0NF5BMl5BanBnXkFtZTYwNjU3MDk2.jpg',
-    genres: ['Ação', 'Drama'],
-    section: 'Populares agora',
-  },
-  {
-    id: 3,
-    title: 'Interstellar',
-    year: '2014',
-    runtime: '169 min',
-    imdbRating: '8.6',
-    plot: 'Exploradores viajam por um buraco de minhoca em busca de um novo lar.',
-    poster:
-      'https://m.media-amazon.com/images/M/MV5BMjIxNTU4MzY4MF5BMl5BanBnXkFtZTgwMzM4ODI3MjE.jpg',
-    genres: ['Sci-Fi', 'Drama'],
-    section: 'Sci-Fi & Espaço',
-  },
-  {
-    id: 4,
-    title: 'Oppenheimer',
-    year: '2023',
-    runtime: '3h',
-    imdbRating: '8.3',
-    plot: 'A história de J. Robert Oppenheimer e a criação da bomba atômica.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BZWU5MTY5ZmEt.jpg',
-    genres: ['Drama', 'Biografia'],
-    section: 'Lançamentos em destaque',
-  },
-  {
-    id: 5,
-    title: 'Tenet',
-    year: '2020',
-    runtime: '150 min',
-    imdbRating: '7.3',
-    plot: 'Um agente manipula o tempo para impedir a Terceira Guerra Mundial.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BMDU3N2YxMmQt.jpg',
-    genres: ['Sci-Fi', 'Ação'],
-    section: 'Sci-Fi & Espaço',
-  },
-  {
-    id: 6,
-    title: 'Pulp Fiction',
-    year: '1994',
-    runtime: '154 min',
-    imdbRating: '8.9',
-    plot: 'Histórias entrelaçadas no submundo de Los Angeles.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BZjhkODI3NmEt.jpg',
-    genres: ['Crime', 'Drama'],
-    section: 'Clássicos essenciais',
-  },
-  {
-    id: 7,
-    title: 'Matrix',
-    year: '1999',
-    runtime: '136 min',
-    imdbRating: '8.7',
-    plot: 'Um hacker descobre a verdadeira natureza da realidade.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BNzQzOTk3NjAt.jpg',
-    genres: ['Sci-Fi', 'Ação'],
-    section: 'Clássicos essenciais',
-  },
-  {
-    id: 8,
-    title: 'Toy Story',
-    year: '1995',
-    runtime: '81 min',
-    imdbRating: '8.3',
-    plot: 'Os brinquedos ganham vida quando os humanos não estão olhando.',
-    poster: 'https://m.media-amazon.com/images/M/MV5BMDU2ZWJlMjkt.jpg',
-    genres: ['Animação', 'Família'],
-    section: 'Para ver em família',
-  },
-])
+// estado vindo da API
+const allMovies = ref<Movie[]>([])
+const loading = ref(false)
+const error = ref<string | null>(null)
 
-// Filtros de gênero
-const genres = ['Todos', 'Ação', 'Drama', 'Sci-Fi', 'Biografia', 'Crime', 'Animação']
+// busca
+const searchTerm = ref('')
+
+// --- helpers de mapeamento ---
+
+function inferSection(genres: string[], year: number | null | undefined): string {
+  const y = year ?? 0
+
+  if (
+    genres.includes('Sci-Fi') ||
+    genres.includes('Sci Fi') ||
+    genres.includes('Science Fiction')
+  ) {
+    return 'Sci-Fi & Espaço'
+  }
+
+  if (genres.includes('Animação') || genres.includes('Animation') || genres.includes('Família')) {
+    return 'Para ver em família'
+  }
+
+  if (y >= 2022) {
+    return 'Lançamentos em destaque'
+  }
+
+  if (y > 0 && y < 2010) {
+    return 'Clássicos essenciais'
+  }
+
+  return 'Populares agora'
+}
+
+function mapDtoToMovie(dto: MovieDTO): Movie {
+  const genres = dto.genre
+    ?.split(',')
+    .map((g) => g.trim())
+    .filter(Boolean) ?? ['Outros']
+
+  const section = inferSection(genres, dto.year)
+
+  return {
+    id: dto.id,
+    title: dto.title,
+    year: dto.year ? String(dto.year) : undefined,
+    // runtime / imdbRating / plot viriam de outro endpoint se você quiser depois
+    poster: dto.poster ?? undefined,
+    favorite: false,
+    genres,
+    section,
+  }
+}
+
+// --- carregamento da API ---
+
+async function loadMovies(query?: string) {
+  loading.value = true
+  error.value = null
+
+  try {
+    const dtos =
+      query && query.trim().length > 0 ? await searchMovies(query.trim()) : await getAllMovies()
+
+    allMovies.value = dtos.map(mapDtoToMovie)
+  } catch (e) {
+    console.error(e)
+    error.value = 'Não foi possível carregar os filmes. Tente novamente mais tarde.'
+  } finally {
+    loading.value = false
+  }
+}
+
+async function onSearch() {
+  await loadMovies(searchTerm.value)
+}
+
+// --- filtros de gênero / seções ---
+
+// gera lista de gêneros dinamicamente a partir dos filmes
+const genres = computed<string[]>(() => {
+  const set = new Set<string>()
+  allMovies.value.forEach((m) => m.genres.forEach((g) => set.add(g)))
+  return ['Todos', ...Array.from(set).sort()]
+})
 
 const selectedGenre = ref<string>('Todos')
 
@@ -120,26 +112,27 @@ const filteredMovies = computed(() => {
   return allMovies.value.filter((m) => m.genres.includes(selectedGenre.value))
 })
 
-// Seções que viram carrosséis
+// seções que viram carrosséis
 const sections = computed(() => {
   const unique = new Set(filteredMovies.value.map((m) => m.section))
   return Array.from(unique)
 })
 
-// Mapa seção -> filmes
+// mapa seção -> filmes
 const moviesBySection = computed<Record<string, Movie[]>>(() => {
   const map: Record<string, Movie[]> = {}
 
   for (const movie of filteredMovies.value) {
     const section = movie.section
-
-    // garante o array e devolve pra variável list
     const list = map[section] ?? (map[section] = [])
-
     list.push(movie)
   }
 
   return map
+})
+
+onMounted(() => {
+  loadMovies()
 })
 </script>
 
@@ -149,8 +142,30 @@ const moviesBySection = computed<Record<string, Movie[]>>(() => {
     <header class="space-y-2">
       <h1 class="text-2xl md:text-3xl font-semibold">Catálogo de filmes</h1>
       <p class="text-slate-300 text-sm md:text-base max-w-2xl">
-        Navegue pelo catálogo de filmes do MovieTracker. Use os filtros por gênero para encontrar
-        rapidamente o tipo de filme que você quer assistir.
+        Navegue pelo catálogo de filmes do MovieTracker. Use a busca e os filtros por gênero para
+        encontrar rapidamente o próximo filme que você quer assistir.
+      </p>
+
+      <!-- Barra de busca -->
+      <form @submit.prevent="onSearch" class="flex items-center gap-3 mt-6 max-w-xl">
+        <input
+          v-model="searchTerm"
+          type="text"
+          placeholder="Buscar por título (ex: Inception)"
+          class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-emerald-400"
+        />
+        <button
+          type="submit"
+          class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-sm font-semibold"
+        >
+          Buscar
+        </button>
+      </form>
+
+      <!-- mensagens de estado -->
+      <p v-if="loading" class="text-xs text-slate-400 mt-1">Carregando filmes...</p>
+      <p v-if="error" class="text-xs text-red-400 mt-1">
+        {{ error }}
       </p>
     </header>
 
@@ -170,7 +185,7 @@ const moviesBySection = computed<Record<string, Movie[]>>(() => {
     </div>
 
     <!-- Carrosséis por seção -->
-    <div class="space-y-8">
+    <div class="space-y-8" v-if="sections.length">
       <MovieCarousel
         v-for="section in sections"
         :key="section"
@@ -180,8 +195,8 @@ const moviesBySection = computed<Record<string, Movie[]>>(() => {
     </div>
 
     <!-- Sem resultados -->
-    <p v-if="!sections.length" class="text-sm text-slate-400">
-      Nenhum filme encontrado para o gênero selecionado.
+    <p v-else-if="!loading" class="text-sm text-slate-400">
+      Nenhum filme encontrado para o filtro/busca atual.
     </p>
   </section>
 </template>

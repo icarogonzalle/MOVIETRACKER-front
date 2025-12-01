@@ -25,17 +25,18 @@
 
       <!-- Perfil / Login -->
       <div class="flex items-center gap-3">
-        <button
-          class="hidden md:inline-flex text-sm px-3 py-1 rounded-full border border-slate-600 hover:border-emerald-400"
-        >
-          Entrar
-        </button>
-
         <RouterLink
           to="/profile"
-          class="h-9 w-9 rounded-full bg-slate-700 flex items-center justify-center text-xs font-medium"
+          class="hidden md:inline-flex text-sm px-3 py-1 rounded-full border border-slate-600 hover:border-emerald-400"
         >
-          IG
+          Profile
+        </RouterLink>
+
+        <RouterLink
+          to="/"
+          class="h-9 w-9 rounded-full bg-red-600 flex items-center justify-center text-xs font-medium"
+        >
+          Exit
         </RouterLink>
       </div>
     </nav>

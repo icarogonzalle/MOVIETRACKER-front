@@ -35,12 +35,13 @@
             class="w-full px-4 py-3 rounded-md bg-[#0d0f24] text-white border border-white/10 focus:ring-2 focus:ring-green-400 outline-none"
           />
 
-          <button
-            type="submit"
-            class="w-full mt-2 py-3 bg-green-500 hover:bg-green-600 transition text-black font-semibold rounded-md"
+          <!-- botão novo -->
+          <router-link
+            to="/home"
+            class="block w-full mt-2 py-3 text-center bg-emerald-500 hover:bg-emerald-600 transition text-black font-semibold rounded-md shadow-lg hover:shadow-emerald-500/20"
           >
             Entrar
-          </button>
+          </router-link>
         </form>
 
         <div class="text-right mt-4">
