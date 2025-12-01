@@ -102,13 +102,13 @@ async function onSearch() {
 const genres = computed<string[]>(() => {
   const set = new Set<string>()
   allMovies.value.forEach((m) => m.genres.forEach((g) => set.add(g)))
-  return ['Todos', ...Array.from(set).sort()]
+  return ['All', ...Array.from(set).sort()]
 })
 
-const selectedGenre = ref<string>('Todos')
+const selectedGenre = ref<string>('All')
 
 const filteredMovies = computed(() => {
-  if (selectedGenre.value === 'Todos') return allMovies.value
+  if (selectedGenre.value === 'All') return allMovies.value
   return allMovies.value.filter((m) => m.genres.includes(selectedGenre.value))
 })
 
